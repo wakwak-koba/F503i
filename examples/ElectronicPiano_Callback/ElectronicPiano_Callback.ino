@@ -16,9 +16,9 @@ void onDisconnect(F503i* device, int reason) {
 void onKey(F503i* device, const char key) {
   Serial.print(device->getAddress().toString().c_str());
   if(key)
-    Serial.printf("pressed %c", key);
+    Serial.printf(" pressed %c", key);
   else
-    Serial.print("released");
+    Serial.print(" released");
   Serial.printf(" illuminance %d", device->getIlluminance());
   Serial.println();
 
