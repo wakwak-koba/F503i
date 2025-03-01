@@ -9,7 +9,7 @@
 #include <map>
 #include <vector>
 
-class F503i {
+class F503i : public Stream {
   public:
     static void setup_NimBLE();
     static F503i* connect(const NimBLEAdvertisedDevice* advertisedDevice);
@@ -31,6 +31,7 @@ class F503i {
     F503i(const NimBLEAdvertisedDevice* advertisedDevice);
     const bool connect();
 
+    static char convertKey(uint16_t key);
     static F503i* getDevice(NimBLEAddress bleAddress);
 
     static std::map<NimBLEAddress, F503i*> bleClients;
@@ -79,6 +80,13 @@ class F503i {
       uint8_t*  pData;
       size_t    length;
     };
+
+  public: // Stream
+    size_t write(uint8_t value);
+    int available() override;
+    int read() override;
+    int peek() override;
+
 };
 
 #endif

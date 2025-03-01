@@ -69,53 +69,12 @@ bool F503i :: handle() {
   if(advertisedDeviceCallbacks && !bleScan->isScanning())
     bleScan->start(0);
 
-  TaskQueue* task;
-  if(xQueueReceive( qhTask, &task, 0 ) == pdPASS) {
-    if(onKey) {
-      char key = 0;
-      switch(*(uint16_t *)task->pData) {
-        case 0x0ffd:
-          key = '1';
-          break;
-        case 0x0ffb:
-          key = '2';
-          break;
-        case 0x0ff7:
-          key = '3';
-          break;
-        case 0x0fef:
-          key = '4';
-          break;
-        case 0x0fdf:
-          key = '5';
-          break;
-        case 0x0fbf:
-          key = '6';
-          break;
-        case 0x0f7f:
-          key = '7';
-          break;
-        case 0x0eff:
-          key = '8';
-          break;
-        case 0x0dff:
-          key = '9';
-          break;
-        case 0x0bff:
-          key = '*';
-          break;
-        case 0x0ffe:
-          key = '0';
-          break;
-        case 0x07ff:
-          key = '#';
-          break;
-        case 0x0fff:
-          break;
-      }
-      onKey(task->device, key);
+  if(onKey) {
+    TaskQueue* task;
+    if(xQueueReceive( qhTask, &task, 0 ) == pdPASS) {
+      onKey(task->device, convertKey(*(uint16_t *)task->pData));
+      delete task;
     }
-    delete task;
   }
 
   return result;
@@ -125,9 +84,55 @@ bool F503i :: handle() {
 std::vector<F503i *> F503i :: getConnected() {
   std::vector<F503i *> result;
   for(auto bleClient : bleClients)
-    if(bleClient.second->isConnected())
+    if(bleClient.second && bleClient.second->isConnected())
       result.push_back(bleClient.second);
   return result;
+}
+
+// static member
+char F503i :: convertKey(uint16_t value) {
+  char key = 0;
+  switch(value) {
+    case 0x0ffd:
+      key = '1';
+      break;
+    case 0x0ffb:
+      key = '2';
+      break;
+    case 0x0ff7:
+      key = '3';
+      break;
+    case 0x0fef:
+      key = '4';
+      break;
+    case 0x0fdf:
+      key = '5';
+      break;
+    case 0x0fbf:
+      key = '6';
+      break;
+    case 0x0f7f:
+      key = '7';
+      break;
+    case 0x0eff:
+      key = '8';
+      break;
+    case 0x0dff:
+      key = '9';
+      break;
+    case 0x0bff:
+      key = '*';
+      break;
+    case 0x0ffe:
+      key = '0';
+      break;
+    case 0x07ff:
+      key = '#';
+      break;
+    case 0x0fff:
+      break;
+  }
+  return key;
 }
 
 // static member
@@ -221,4 +226,40 @@ uint16_t F503i :: getIlluminance() {
 
 NimBLEAddress F503i :: getAddress() {
   return bleClient->getPeerAddress();
+}
+
+size_t F503i :: write(uint8_t value) {
+  // TODO: 鳴らす・光らす するかどうか
+  return 0;
+}
+
+int F503i :: available() {
+  if(!qhTask)
+    return 0;
+
+  return uxQueueMessagesWaiting(qhTask);
+}
+
+int F503i :: read() {
+  if(!qhTask)
+    return -1;
+
+  TaskQueue* task;
+  if(xQueueReceive( qhTask, &task, 0 ) != pdPASS)
+    return -1;
+
+  auto key = convertKey(*(uint16_t *)task->pData);
+  delete task;
+  return key;
+}
+
+int F503i :: peek() {
+  if(!qhTask)
+    return -1;
+
+  TaskQueue* task;
+  if(xQueuePeek( qhTask, &task, 0 ) != pdPASS)
+    return -1;
+
+  return convertKey(*(uint16_t *)task->pData);
 }
