@@ -1,0 +1,27 @@
+#######################################
+# Syntax Coloring Map for F503i
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+F503i	KEYWORD1
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+setup_NimBLE	KEYWORD2
+connect	KEYWORD2
+handle	KEYWORD2
+getConnected	KEYWORD2
+isConnected	KEYWORD2
+setLed	KEYWORD2
+setBuzzer	KEYWORD2
+getIlluminance	KEYWORD2
+getAddress	KEYWORD2
+onKey	KEYWORD2
+onConnect	KEYWORD2
+onDisconnect	KEYWORD2
+#######################################
+# Constants (LITERAL1)
+#######################################
+
