@@ -1,4 +1,4 @@
-#include "F503i.h"
+#include <F503i.h>
 
 // つながったら、ここが呼ばれるよ
 void onConnect(F503i* device) {
