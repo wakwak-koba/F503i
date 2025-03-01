@@ -52,9 +52,11 @@ F503i* F503i :: connect(const NimBLEAdvertisedDevice* advertisedDevice) {
 bool F503i :: handle() {
   if(!qhTask)
     qhTask = xQueueCreate(10, sizeof(TaskQueue *));
-    
+  if(!bleScan)
+    bleScan = NimBLEDevice::getScan();
+
   bool result = false;
-  if(!NimBLEDevice::getScan()->isScanning()) {
+  if(!bleScan->isScanning()) {
     for(auto pClient : bleClients) {
       auto device = pClient.second;
       if(device && !device->isConnected()) {
@@ -64,7 +66,7 @@ bool F503i :: handle() {
     }
   }
 
-  if(bleScan && !bleScan->isScanning())
+  if(advertisedDeviceCallbacks && !bleScan->isScanning())
     bleScan->start(0);
 
   TaskQueue* task;
@@ -209,12 +211,12 @@ void F503i :: setBuzzer(const uint8_t tone) {
   bleService->setValue(UUID_buzzer, NimBLEAttValue(&tone, 1));
 }
 
-uint8_t F503i :: getIlluminance() {
+uint16_t F503i :: getIlluminance() {
   if(!bleService)
-    return 0x00;
+    return 0x0000;
     
   auto value = bleService->getValue(UUID_cds);
-  return value[0];
+  return *(uint16_t *)value.data();
 }
 
 NimBLEAddress F503i :: getAddress() {

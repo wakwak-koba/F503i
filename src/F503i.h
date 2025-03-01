@@ -19,7 +19,7 @@ class F503i {
     bool isConnected();
     void setLed(const uint8_t no, const uint8_t brightness);
     void setBuzzer(const uint8_t tone);
-    uint8_t getIlluminance();
+    uint16_t getIlluminance();
     NimBLEAddress getAddress();
 
     /* key: '0'～'9' '*' '#', 0x00:released */
