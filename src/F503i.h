@@ -29,16 +29,18 @@ class F503i : public Stream {
 
   protected:
     F503i(const NimBLEAdvertisedDevice* advertisedDevice);
+    ~F503i();
     const bool connect();
 
     static char convertKey(uint16_t key);
     static F503i* getDevice(NimBLEAddress bleAddress);
 
     static std::map<NimBLEAddress, F503i*> bleClients;
-    static QueueHandle_t qhTask;
+    
     static NimBLEScan* bleScan;
 
     const NimBLEAdvertisedDevice* advertisedDevice = nullptr;
+    QueueHandle_t qhTask;
     NimBLEClient* bleClient = nullptr;
     NimBLERemoteService* bleService = nullptr;
 

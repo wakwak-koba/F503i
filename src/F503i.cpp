@@ -19,7 +19,6 @@ std::function<void(F503i*, int)>            F503i :: onDisconnect = nullptr;
 NimBLEScan*                                 F503i :: bleScan = nullptr;
 F503i :: AdvertisedDeviceCallbacks*         F503i :: advertisedDeviceCallbacks  = nullptr;
 std::map<NimBLEAddress, F503i*>             F503i :: bleClients;
-QueueHandle_t                               F503i :: qhTask = nullptr;
 F503i :: ClientCallbacks                    F503i :: clientCallbacks;
 
 // static member
@@ -50,8 +49,6 @@ F503i* F503i :: connect(const NimBLEAdvertisedDevice* advertisedDevice) {
 
 // static member
 bool F503i :: handle() {
-  if(!qhTask)
-    qhTask = xQueueCreate(10, sizeof(TaskQueue *));
   if(!bleScan)
     bleScan = NimBLEDevice::getScan();
 
@@ -71,9 +68,11 @@ bool F503i :: handle() {
 
   if(onKey) {
     TaskQueue* task;
-    if(xQueueReceive( qhTask, &task, 0 ) == pdPASS) {
-      onKey(task->device, convertKey(*(uint16_t *)task->pData));
-      delete task;
+    for(auto bleClient : bleClients) {
+      if(bleClient.second && xQueueReceive( bleClient.second->qhTask, &task, 0 ) == pdPASS) {
+        onKey(task->device, convertKey(*(uint16_t *)task->pData));
+        delete task;
+      }
     }
   }
 
@@ -142,6 +141,11 @@ F503i* F503i :: getDevice(NimBLEAddress bleAddress) {
 
 F503i :: F503i(const NimBLEAdvertisedDevice* advertisedDevice) {
   this->advertisedDevice = advertisedDevice;
+  qhTask = xQueueCreate(10, sizeof(TaskQueue *));
+}
+
+F503i :: ~F503i() {
+  vQueueUnregisterQueue(qhTask);
 }
 
 const bool F503i :: connect() {
@@ -171,9 +175,10 @@ const bool F503i :: connect() {
   if(!bleClient->isConnected() && !bleClient->connect(advertisedDevice))
     return false;
 
-  auto onKeyHandle = [&bleClients, &qhTask](NimBLERemoteCharacteristic* pRemoteCharacteristic, uint8_t* pData, size_t length, bool isNotify) {
-    auto parameter = new TaskQueue(getDevice(pRemoteCharacteristic->getClient()->getPeerAddress()), pData, length);
-    xQueueSend( qhTask, &parameter, 0 );
+  auto onKeyHandle = [&bleClients](NimBLERemoteCharacteristic* pRemoteCharacteristic, uint8_t* pData, size_t length, bool isNotify) {
+    auto device = getDevice(pRemoteCharacteristic->getClient()->getPeerAddress());
+    auto parameter = new TaskQueue(device, pData, length);
+    xQueueSend( device->qhTask, &parameter, 0 );
     return;
   };
 
