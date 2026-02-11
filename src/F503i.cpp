@@ -153,12 +153,16 @@ const bool F503i :: connect() {
     bleClient = NimBLEDevice::getClientByPeerAddress(advertisedDevice->getAddress());
     if(!bleClient)
       bleClient = NimBLEDevice::getDisconnectedClient();
-    else if(bleClient && !bleClient->connect(advertisedDevice, false))
+    else if(bleClient && !bleClient->connect(advertisedDevice, false, false, false))
       return false;
   }
 
   if(!bleClient) {
+#ifdef MYNEWT_VAL_BLE_MAX_CONNECTIONS
+    if(NimBLEDevice::getCreatedClientCount() >= MYNEWT_VAL_BLE_MAX_CONNECTIONS)
+#else
     if(NimBLEDevice::getCreatedClientCount() >= NIMBLE_MAX_CONNECTIONS)
+#endif
       return false;
 
     bleClient = NimBLEDevice::createClient();
@@ -166,15 +170,14 @@ const bool F503i :: connect() {
       return false;
     bleClient->setClientCallbacks(&clientCallbacks, false);
     bleClient->setConnectTimeout(5000);
-    if (!bleClient->connect(advertisedDevice)) {
+    if (!bleClient->connect(advertisedDevice, true, false, false)) {
       NimBLEDevice::deleteClient(bleClient);
       return false;
     }
   }
 
-  if(!bleClient->isConnected() && !bleClient->connect(advertisedDevice))
+  if(!bleClient->isConnected() && !bleClient->connect(advertisedDevice, true, false, false))
     return false;
-
   auto onKeyHandle = [&bleClients](NimBLERemoteCharacteristic* pRemoteCharacteristic, uint8_t* pData, size_t length, bool isNotify) {
     auto device = getDevice(pRemoteCharacteristic->getClient()->getPeerAddress());
     auto parameter = new TaskQueue(device, pData, length);
